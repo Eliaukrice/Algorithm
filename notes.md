@@ -1,8 +1,6 @@
----
-marp: true
----
-
 # 数学 07
+
+[toc]
 
 ## 知识点
 
@@ -172,17 +170,33 @@ $$
 
 - 高斯约旦消元，将行阶梯矩阵继续化简为对角矩阵，这样可以直接计算出每一个未知数的结果
 
-#### 应用
+#### 高斯约旦消元算法
 
-求解逆矩阵，矩阵树定理，期望 $dp$ 状态使用高斯消元计算（随机游走+高斯消元）
+算法的步骤如下
 
-### 拉格朗日插值
+- 枚举第 $j$ 列
+  - 从第 $j + 1$ 行到第 $n$ 行，寻找 **绝对值最大** 的元素作为列主元，设其所在行为 $r$，与第 $j$ 行交换
+  - 从第 $1$ 行到第 $n$ 行，把除去第 $j$ 行的每一行的第 $j$ 个元素消去，其他元素相应改变
+  
+注意，在寻找列主元的过程中，如果绝对值最大的元素都为 $0$ 时，则方程组无解
+
+在计算机中，我们可以用 $\epsilon$ 来逼近 $0$
+
+#### 高斯消元的应用
+
+- 逆矩阵
+- 矩阵树定理
+- 期望 $dp$（本状态由前后状态转移而来）
+
+### 插值
 
 给定 $n$ 个点 $(x_{0}, y_{0}),\ (x_{1},\ y_{1}),\ (x_{2},\ y_{2}),\ ...,\ (x_{n},\ y_{n})$
 
 可以用一个 $n$ 次多项式 $f(x)$ 来拟合这个曲线
 
-#### 理解
+#### 如何理解插值
+
+插值，顾名思义，就是画一条曲线，穿针引线，把所有的值都插进去
 
 从我们熟悉的低阶多项式理解
 
@@ -196,7 +210,7 @@ $n + 1$ 个点唯一确定一个 $n$ 次多项式
 
 这样的多项式 $f(x)$ 一定 **唯一存在**，数学证明省略
 
-#### 拉格朗日插值算法
+#### 优秀的插值算法
 
 具体如何还原多项式？
 
@@ -233,7 +247,7 @@ $$
 
 拉格朗日插值法可以在 $O(n^2)$ 时间范围内计算答案
 
-##### 举例
+##### 举例理解拉格朗日插值
 
 上述函数有点抽象，我们用例子来解释
 
@@ -265,12 +279,142 @@ $$
 
 因此我们还原出了 $f(x)$
 
-#### 应用
+#### 插值的应用
 
-作为基础设施，求自然数幂和
+求解 $\sum\limits_{i = 1}^{n}{i^k}$
 
 ## 题目选讲
 
-### 1. 高斯消元
+### 2614. 高斯消元
 
-### 2. 拉格朗日插值
+#### 题意
+
+给定一个 $n$ 元一次线性方程组，对其求解
+
+$$
+\left\{\begin{matrix}
+a_{1,1}x_{1} + a_{1,2}x_{2} + .. + a_{1,n}x_{n} = b_{1}\\
+a_{2,1}x_{1} + a_{2,2}x_{2} + .. + a_{2,n}x_{n} = b_{2}\\
+\vdots\\
+a_{n,1}x_{1} + a_{n,2}x_{2} + .. + a_{n,n}x_{n} = b_{n}\\
+\end{matrix}\right.
+$$
+
+输入第一行一个数，表示 $n$
+
+下面输入 $n$ 行，每行输入 $n + 1$ 个整数，表示 $a_{i,j}$ 和 $b_{i}$
+
+最终输出 $1$ 行 $n$ 个数，依次表示 $x_{1},\ x_{2},\ ..,\ x_{n}$ （保留两位小数），注意行末没有空格
+
+规定 $1\leq n\leq 100,\ |a_{i}|\leq 10^4,\ |b_{i}|\leq 10^4$
+
+#### 题解
+
+高斯消元模板题，直接上代码
+
+```cpp
+#include <bits/stdc++.h>
+#define EPS 1e-7
+using namespace std;
+
+const int N = 1e2 + 7;
+int n;
+double mat[N][N], x[N];
+
+void Gauss_jordan()
+{
+    for (int i = 1; i <= n; ++i) {
+        // 在第 i 列寻找最大的数值作为主元
+        int m = i;
+        for (int j = i + 1; j <= n; ++j)
+            if (fabs(mat[j][i]) > fabs(mat[m][i])) m = j;
+
+        // 第 i 列全为 0，xi 无解
+        if (fabs(mat[m][i]) < EPS) {
+            printf("No Solution\n");
+            return;
+        }
+        
+        // 交换行
+        if (m != i) swap(mat[i], mat[m]);
+
+        //对每行进行消元，首项不一定为1
+        for (int j = 1; j <= n; ++j)
+            if (j != i) {
+                double temp = mat[j][i] / mat[i][i];
+                for (int k = i; k <= n + 1; ++k)
+                    mat[j][k] -= temp * mat[i][k];
+            }
+
+    }
+    for (int i = 1; i <= n; ++i) x[i] = mat[i][n + 1] / mat[i][i];
+    for (int i = 1; i <= n; ++i) printf("%.2f%c", x[i], " \n"[i == n]);
+}
+
+int main() {
+    cin >> n;
+    for (int i = 1; i <= n; ++i)
+        for (int j = 1; j <= n + 1; ++j)
+            scanf("%lf", &mat[i][j]);
+    Gauss_jordan();
+    return 0;
+}
+```
+
+### 2615. 拉格朗日插值
+
+#### 题意
+
+给定 $n$ 个点 $(x_{i},\ y_{i})$，拟合 $n - 1$ 次多项式 $f(x)$，给定 $k$，计算 $f(k)\ mod\ 998244353$
+
+数据保证
+
+$1\leq n\leq 10^3$
+
+$1\leq x_{i},\ y_{i},\ k\leq 998244353$，并且 $x_{i}$ 两两不同
+
+#### 题解
+
+拉格朗日模板题，直接上代码
+
+```cpp
+#include <bits/stdc++.h>
+typedef long long LL;
+const int N = 2e3 + 7;
+const int MOD = 998244353;
+using namespace std;
+
+LL qpow(LL a, LL b)
+{
+    if(!a) return 0;
+    LL ans = 1;
+    while(b) {
+        if(b & 1) ans *= a, ans %= MOD;
+        a *= a, a %= MOD, b >>= 1;
+    }
+    return ans;
+}
+LL inv(LL x) {return qpow(x, MOD - 2) % MOD;}
+LL add(LL x, LL y) {return (x + y) % MOD;}
+LL sub(LL x, LL y) {return ((x - y) % MOD + MOD) % MOD;}
+
+LL k, n, x[N], y[N];
+
+int main()
+{
+    scanf("%lld %lld", &k, &n);
+    for(int i = 1; i <= k; ++i) scanf("%lld %lld", &x[i], &y[i]);
+    LL res = 0;
+    for(int j = 1; j <= k; ++j) {
+        LL ans = y[j];
+        for(int i = 1; i <= k; ++i) {
+            if(i == j) continue;
+            ans *= sub(n, x[i]), ans %= MOD;
+            ans *= inv(sub(x[j], x[i])), ans %= MOD;
+        }
+        res += ans, res %= MOD;
+    }
+    printf("%lld\n", res);
+    return 0;
+}
+```
